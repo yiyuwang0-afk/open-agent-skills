@@ -1,0 +1,3 @@
+display_name: Obsidian Knowledge Flow
+short_description: Classify and route Obsidian notes into hubs.
+default_prompt: Set up or maintain an Obsidian knowledge flow with source folders, open content topics, long-term hubs, and automated classification.

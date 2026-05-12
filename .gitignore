@@ -1,0 +1,11 @@
+.env
+*.pyc
+__pycache__/
+.DS_Store
+.pytest_cache/
+vault/
+data/
+local/
+secrets/
+*_processed_messages.json
+
