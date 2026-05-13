@@ -77,6 +77,7 @@ Use bundled scripts as starting points:
 
 - `scripts/classify_materials.py`: classify Markdown notes with an OpenAI-compatible chat-completions API.
 - `scripts/feishu_receiver.py`: receive Feishu/Lark bot messages and save them to an Obsidian inbox.
+- `scripts/sync_topic_hubs.py`: create missing sidebar-visible topic hub pages from open content topics.
 
 Recommended environment variables:
 
@@ -126,3 +127,12 @@ python scripts/classify_materials.py --vault /path/to/vault --folder "06_Sources
 
 Only run the whole vault after confirming the output fields are correct.
 
+## Syncing Sidebar Topic Pages
+
+After classification, create missing topic pages from `topics`:
+
+```bash
+python scripts/sync_topic_hubs.py --vault /path/to/vault --topics-folder "05_Topic_Hubs/Content"
+```
+
+Keep sidebar pages coarse. Do not automatically create pages from every fine-grained tag unless the user asks for that behavior.
