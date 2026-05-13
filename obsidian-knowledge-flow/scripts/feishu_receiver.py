@@ -71,6 +71,9 @@ def serve(vault: Path, inbox: str) -> int:
 
     def on_message(event: P2ImMessageReceiveV1) -> None:
         message = extract_message(event)
+        if not is_material_intent(message):
+            print(f"skip non-material message {message.message_id}: {message.text[:80]}")
+            return
         target = save_message(vault, inbox, message)
         print(f"saved Feishu message {message.message_id}: {target}")
 
@@ -111,6 +114,18 @@ def save_message(vault: Path, inbox: str, message: MaterialMessage) -> Path:
     target = unique_path(folder / f"{timestamp}-{safe_filename(title_from_message(message))}.md")
     target.write_text(render_message(message), encoding="utf-8")
     return target
+
+
+def is_material_intent(message: MaterialMessage) -> bool:
+    text = message.text.strip()
+    if message.source_url:
+        return True
+    if not text:
+        return False
+    material_prefixes = ("save", "clip", "archive", "material:", "note:", "保存", "入库", "收录", "素材：", "素材:")
+    if text.startswith(material_prefixes):
+        return True
+    return len(text) >= 120
 
 
 def render_message(message: MaterialMessage) -> str:
@@ -226,4 +241,3 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("Feishu receiver stopped.", file=sys.stderr)
         raise SystemExit(130)
-
