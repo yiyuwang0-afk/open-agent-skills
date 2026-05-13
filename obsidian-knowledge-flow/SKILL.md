@@ -135,4 +135,4 @@ After classification, create missing topic pages from `topics`:
 python scripts/sync_topic_hubs.py --vault /path/to/vault --topics-folder "05_Topic_Hubs/Content"
 ```
 
-Keep sidebar pages coarse. Do not automatically create pages from every fine-grained tag unless the user asks for that behavior.
+Keep sidebar pages coarse. Prefer hierarchical pages such as `Content/AI/AI products.md` over a flat folder full of every generated keyword. Do not automatically create pages from every fine-grained tag unless the user asks for that behavior.

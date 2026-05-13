@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create sidebar-visible Obsidian topic pages from open content topics."""
+"""Create sidebar-visible Obsidian topic pages from coarse topic fields."""
 
 from __future__ import annotations
 
@@ -16,7 +16,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--vault", required=True, help="Obsidian vault root.")
     parser.add_argument("--topics-folder", default="05_Topic_Hubs/Content", help="Topic page folder relative to the vault.")
     parser.add_argument("--scan-folders", default=",".join(DEFAULT_SCAN_FOLDERS), help="Comma-separated folders to scan.")
-    parser.add_argument("--field", default="topics", help="Open content topic field.")
+    parser.add_argument("--domain-field", default="domains", help="Top-level topic field.")
+    parser.add_argument("--subtopic-field", default="subtopics", help="Second-level topic field.")
     parser.add_argument("--dry-run", action="store_true", help="Print pages that would be created.")
     args = parser.parse_args(argv)
 
@@ -26,7 +27,8 @@ def main(argv: list[str] | None = None) -> int:
         vault,
         topics_folder=args.topics_folder,
         scan_folders=scan_folders,
-        field=args.field,
+        domain_field=args.domain_field,
+        subtopic_field=args.subtopic_field,
         dry_run=args.dry_run,
     )
     if not created:
@@ -43,25 +45,33 @@ def sync_topic_pages(
     *,
     topics_folder: str,
     scan_folders: tuple[str, ...],
-    field: str,
+    domain_field: str,
+    subtopic_field: str,
     dry_run: bool,
 ) -> list[Path]:
     target_dir = vault / topics_folder
     created: list[Path] = []
-    for topic in sorted(collect_topics(vault, scan_folders=scan_folders, field=field)):
-        target = target_dir / f"{topic}.md"
-        if target.exists():
-            continue
-        created.append(target)
-        if dry_run:
-            continue
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(render_topic_page(topic, field=field), encoding="utf-8")
+    for domain, subtopics in sorted(collect_topic_tree(vault, scan_folders=scan_folders, domain_field=domain_field, subtopic_field=subtopic_field).items()):
+        domain_dir = target_dir / domain
+        domain_page = domain_dir / f"{domain}.md"
+        if not domain_page.exists():
+            created.append(domain_page)
+            if not dry_run:
+                domain_page.parent.mkdir(parents=True, exist_ok=True)
+                domain_page.write_text(render_domain_page(domain, domain_field=domain_field), encoding="utf-8")
+        for subtopic in sorted(subtopics):
+            subtopic_page = domain_dir / f"{subtopic}.md"
+            if subtopic_page.exists():
+                continue
+            created.append(subtopic_page)
+            if not dry_run:
+                subtopic_page.parent.mkdir(parents=True, exist_ok=True)
+                subtopic_page.write_text(render_subtopic_page(domain, subtopic, domain_field=domain_field, subtopic_field=subtopic_field), encoding="utf-8")
     return created
 
 
-def collect_topics(vault: Path, *, scan_folders: tuple[str, ...], field: str) -> set[str]:
-    topics: set[str] = set()
+def collect_topic_tree(vault: Path, *, scan_folders: tuple[str, ...], domain_field: str, subtopic_field: str) -> dict[str, set[str]]:
+    tree: dict[str, set[str]] = {}
     for folder in scan_folders:
         root = vault / folder
         if not root.exists():
@@ -69,24 +79,49 @@ def collect_topics(vault: Path, *, scan_folders: tuple[str, ...], field: str) ->
         for note in root.rglob("*.md"):
             if note.name == ".gitkeep":
                 continue
-            topics.update(read_frontmatter_lists(note).get(field, []))
-    return {topic for topic in topics if valid_topic_name(topic)}
+            metadata = read_frontmatter_lists(note)
+            domains = [item for item in metadata.get(domain_field, []) if valid_topic_name(item)]
+            subtopics = [item for item in metadata.get(subtopic_field, []) if valid_topic_name(item)]
+            for domain in domains:
+                tree.setdefault(domain, set()).update(subtopics)
+    return tree
 
 
-def render_topic_page(topic: str, *, field: str) -> str:
+def render_domain_page(domain: str, *, domain_field: str) -> str:
     return f"""---
-type: content-topic
-topics:
-  - {topic}
+type: content-domain
+{domain_field}:
+  - {domain}
 status: active
 ---
-# {topic}
+# {domain}
 
 ## Related Notes
 
 ```dataview
 TABLE source, type, topics, hub_topics, status
-WHERE contains({field}, this.file.name)
+WHERE contains({domain_field}, this.file.name)
+SORT file.mtime DESC
+```
+"""
+
+
+def render_subtopic_page(domain: str, subtopic: str, *, domain_field: str, subtopic_field: str) -> str:
+    return f"""---
+type: content-subtopic
+{domain_field}:
+  - {domain}
+{subtopic_field}:
+  - {subtopic}
+status: active
+---
+# {subtopic}
+
+## Related Notes
+
+```dataview
+TABLE source, type, topics, hub_topics, status
+WHERE contains({domain_field}, "{domain}") AND contains({subtopic_field}, this.file.name)
 SORT file.mtime DESC
 ```
 """
@@ -127,4 +162,3 @@ def valid_topic_name(topic: str) -> bool:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
