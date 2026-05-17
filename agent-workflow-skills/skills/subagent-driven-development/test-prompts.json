@@ -1,0 +1,12 @@
+[
+  {
+    "id": 1,
+    "prompt": "这个实现计划已经写好了，帮我在当前会话里按任务推进。",
+    "expected": "Assistant chooses fresh subagents per task, preserves controller context, and enforces staged review."
+  },
+  {
+    "id": 2,
+    "prompt": "我想直接自己一路做完，不用 review 了，省时间。",
+    "expected": "Assistant preserves the spec-review then quality-review gate instead of collapsing the workflow."
+  }
+]

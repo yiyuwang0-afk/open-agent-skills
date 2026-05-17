@@ -22,9 +22,6 @@ from typing import Any
 class MaterialMessage:
     text: str
     message_type: str
-    message_id: str
-    chat_id: str
-    sender_id: str
     source_url: str
 
 
@@ -38,19 +35,20 @@ def main(argv: list[str] | None = None) -> int:
     vault = Path(args.vault).expanduser().resolve()
     load_env_file(vault / ".env")
     if args.simulate_text:
+        message = MaterialMessage(
+            text=args.simulate_text,
+            message_type="text",
+            source_url=first_url(args.simulate_text),
+        )
+        if not is_material_intent(message):
+            print("simulate skipped: non-material message")
+            return 0
         target = save_message(
             vault,
             args.inbox,
-            MaterialMessage(
-                text=args.simulate_text,
-                message_type="text",
-                message_id="simulate",
-                chat_id="simulate",
-                sender_id="simulate",
-                source_url=first_url(args.simulate_text),
-            ),
+            message,
         )
-        print(f"saved: {target}")
+        print(f"saved: {target.name}")
         return 0
 
     return serve(vault, args.inbox)
@@ -72,10 +70,10 @@ def serve(vault: Path, inbox: str) -> int:
     def on_message(event: P2ImMessageReceiveV1) -> None:
         message = extract_message(event)
         if not is_material_intent(message):
-            print(f"skip non-material message {message.message_id}: {message.text[:80]}")
+            print(f"skip non-material message: {message.text[:80]}")
             return
         target = save_message(vault, inbox, message)
-        print(f"saved Feishu message {message.message_id}: {target}")
+        print(f"saved Feishu message: {target.name}")
 
     event_handler = (
         lark.EventDispatcherHandler.builder("", "")
@@ -91,18 +89,13 @@ def serve(vault: Path, inbox: str) -> int:
 def extract_message(event: Any) -> MaterialMessage:
     event_body = getattr(event, "event", event)
     message = getattr(event_body, "message", None)
-    sender = getattr(event_body, "sender", None)
     if message is None:
         raise ValueError("Feishu event does not contain message payload")
     message_type = str(getattr(message, "message_type", "") or "")
     text = content_to_text(message_type, str(getattr(message, "content", "") or ""))
-    sender_id = getattr(sender, "sender_id", None)
     return MaterialMessage(
         text=text,
         message_type=message_type,
-        message_id=str(getattr(message, "message_id", "") or ""),
-        chat_id=str(getattr(message, "chat_id", "") or ""),
-        sender_id=str(getattr(sender_id, "open_id", "") or ""),
         source_url=first_url(text),
     )
 
@@ -122,10 +115,24 @@ def is_material_intent(message: MaterialMessage) -> bool:
         return True
     if not text:
         return False
-    material_prefixes = ("save", "clip", "archive", "material:", "note:", "保存", "入库", "收录", "素材：", "素材:")
+    material_prefixes = (
+        "save:",
+        "clip:",
+        "archive:",
+        "material:",
+        "note:",
+        "保存素材：",
+        "保存素材:",
+        "入库素材：",
+        "入库素材:",
+        "收录素材：",
+        "收录素材:",
+        "素材：",
+        "素材:",
+    )
     if text.startswith(material_prefixes):
         return True
-    return len(text) >= 120
+    return False
 
 
 def render_message(message: MaterialMessage) -> str:
@@ -140,7 +147,6 @@ def render_message(message: MaterialMessage) -> str:
             f"source_url: {yaml_scalar(message.source_url)}",
             f"captured: {yaml_scalar(captured)}",
             f"message_type: {yaml_scalar(message.message_type)}",
-            f"message_id: {yaml_scalar(message.message_id)}",
             "topics: []",
             "hub_topics: []",
             "status: pending",

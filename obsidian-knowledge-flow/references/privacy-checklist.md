@@ -11,4 +11,6 @@ Before publishing a skill or example repository:
 - Use fake URLs such as `https://example.com/article`.
 - Keep scripts configurable through environment variables and CLI arguments.
 - Add `.gitignore` entries for `.env`, caches, processed-message stores, and local vault data.
-
+- Do not store Feishu/Lark message IDs, chat IDs, sender IDs, or local absolute paths in generated notes.
+- Default receivers should save only URLs or explicitly prefixed material, not arbitrary long text.
+- Default sync scripts should not scan diary, personal notes, or project folders unless configured by the user.

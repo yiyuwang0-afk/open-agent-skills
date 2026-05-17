@@ -1,0 +1,12 @@
+[
+  {
+    "id": 1,
+    "prompt": "帮我给现有监控面板加一个新的告警配置页面。",
+    "expected": "Assistant explores context, asks a scoped question, proposes approaches, and presents design before implementation."
+  },
+  {
+    "id": 2,
+    "prompt": "就一个很小的配置改动，不用设计，直接做。",
+    "expected": "Assistant still requires a short design and approval before implementation."
+  }
+]

@@ -1,0 +1,12 @@
+[
+  {
+    "id": 1,
+    "prompt": "这个 spec 已经定了，给我一个可执行的实现计划。",
+    "expected": "Assistant writes a detailed TDD-first plan with exact files, commands, and task breakdown."
+  },
+  {
+    "id": 2,
+    "prompt": "给个简短计划就行，细节我自己补。",
+    "expected": "Assistant still provides concrete implementation detail with no placeholders."
+  }
+]

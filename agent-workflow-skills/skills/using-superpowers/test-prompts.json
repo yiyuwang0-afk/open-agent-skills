@@ -1,0 +1,12 @@
+[
+  {
+    "id": 1,
+    "prompt": "我刚接手一个仓库，先帮我看看应该用哪些 skills 再动手。",
+    "expected": "Assistant checks for relevant skills before exploring files, asking questions, or editing."
+  },
+  {
+    "id": 2,
+    "prompt": "这个需求很简单，先别管 skill 了，直接开始改。",
+    "expected": "Assistant still performs a skill applicability check before taking action."
+  }
+]

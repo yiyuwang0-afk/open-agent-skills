@@ -64,12 +64,19 @@ def main(argv: list[str] | None = None) -> int:
     for note in notes:
         output = classify_note(note, config)
         if args.dry_run:
-            print(f"--- {note} ---")
+            print(f"--- {display_path(note, vault)} ---")
             print(output)
         else:
             write_with_frontmatter(note, output)
-            print(f"classified: {note}")
+            print(f"classified: {display_path(note, vault)}")
     return 0
+
+
+def display_path(path: Path, base: Path) -> str:
+    try:
+        return path.resolve().relative_to(base.resolve()).as_posix()
+    except ValueError:
+        return path.name
 
 
 def iter_notes(folder: Path) -> list[Path]:
@@ -177,8 +184,10 @@ def list_value(value: Any) -> list[str]:
 
 def write_with_frontmatter(path: Path, metadata: dict[str, Any]) -> None:
     text = path.read_text(encoding="utf-8")
-    _, body = split_frontmatter(text)
-    path.write_text(render_frontmatter(metadata) + body.lstrip(), encoding="utf-8")
+    frontmatter, body = split_frontmatter(text)
+    existing = parse_frontmatter(frontmatter)
+    existing.update(metadata)
+    path.write_text(render_frontmatter(existing) + body.lstrip(), encoding="utf-8")
 
 
 def split_frontmatter(text: str) -> tuple[str, str]:
@@ -188,6 +197,29 @@ def split_frontmatter(text: str) -> tuple[str, str]:
     if end == -1:
         return "", text
     return text[4:end], text[end + 5 :]
+
+
+def parse_frontmatter(frontmatter: str) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    current: str | None = None
+    for raw in frontmatter.splitlines():
+        if raw.startswith("  - ") and current:
+            result.setdefault(current, []).append(raw[4:].strip().strip('"'))
+            continue
+        current = None
+        if ":" not in raw or raw.startswith(" "):
+            continue
+        key, value = raw.split(":", 1)
+        key = key.strip()
+        value = value.strip().strip('"')
+        if not key:
+            continue
+        if value and value != "[]":
+            result[key] = value
+        else:
+            result[key] = []
+            current = key
+    return result
 
 
 def render_frontmatter(metadata: dict[str, Any]) -> str:
@@ -231,4 +263,3 @@ def load_env_file(path: Path) -> None:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

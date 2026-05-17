@@ -1,0 +1,12 @@
+[
+  {
+    "id": 1,
+    "prompt": "这个功能刚做完，继续下一个任务吧，review 之后再说。",
+    "expected": "Assistant requests review at the appropriate checkpoint instead of deferring it casually."
+  },
+  {
+    "id": 2,
+    "prompt": "帮我在当前会话里对刚完成的任务做一次代码审查。",
+    "expected": "Assistant prepares the right diff context and dispatches a focused reviewer workflow."
+  }
+]

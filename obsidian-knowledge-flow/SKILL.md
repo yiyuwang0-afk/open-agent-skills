@@ -14,6 +14,14 @@ Use this skill to build or maintain an Obsidian knowledge workflow with:
 - Dataview topic hub pages
 - Feishu/Lark forwarding into an Obsidian inbox
 
+Default behavior should be conservative:
+
+- do not treat long plain text as material unless it has an explicit save/archive prefix
+- do not store Feishu/Lark message IDs, chat IDs, sender IDs, or local absolute paths in notes
+- keep `hub_topics` empty unless the user provides an explicit allowed list
+- scan public/source folders by default, not diary or private project folders
+- update generated topic-page content only inside marker blocks
+
 ## Privacy Rule
 
 Before creating public files, remove user-specific details:
@@ -79,15 +87,7 @@ Use bundled scripts as starting points:
 - `scripts/feishu_receiver.py`: receive Feishu/Lark bot messages and save them to an Obsidian inbox.
 - `scripts/sync_topic_hubs.py`: create missing sidebar-visible topic hub pages from open content topics.
 
-Recommended environment variables:
-
-```bash
-CLASSIFIER_API_KEY=...
-CLASSIFIER_BASE_URL=https://api.example.com
-CLASSIFIER_MODEL=example-model
-FEISHU_APP_ID=...
-FEISHU_APP_SECRET=...
-```
+Recommended environment variables are `CLASSIFIER_API_KEY`, `CLASSIFIER_BASE_URL`, `CLASSIFIER_MODEL`, `FEISHU_APP_ID`, and `FEISHU_APP_SECRET`.
 
 Do not hard-code secrets in skill files, scripts, templates, or examples.
 
@@ -136,3 +136,13 @@ python scripts/sync_topic_hubs.py --vault /path/to/vault --topics-folder "05_Top
 ```
 
 Keep sidebar pages coarse. Prefer hierarchical pages such as `Content/AI/AI products.md` over a flat folder full of every generated keyword. Do not automatically create pages from every fine-grained tag unless the user asks for that behavior.
+
+Generated topic-page sections use:
+
+```markdown
+<!-- AUTO-GENERATED:START -->
+...
+<!-- AUTO-GENERATED:END -->
+```
+
+Existing pages without those markers should be reported and left untouched.

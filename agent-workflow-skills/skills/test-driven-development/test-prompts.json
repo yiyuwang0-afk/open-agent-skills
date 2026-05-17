@@ -1,0 +1,12 @@
+[
+  {
+    "id": 1,
+    "prompt": "修这个回归 bug，不过先直接改代码，最后补测试就行。",
+    "expected": "Assistant insists on a failing test first before implementation."
+  },
+  {
+    "id": 2,
+    "prompt": "这个功能只改一个小函数，没必要上 TDD 吧？",
+    "expected": "Assistant still applies TDD, or explicitly checks whether the case falls under a real exception."
+  }
+]

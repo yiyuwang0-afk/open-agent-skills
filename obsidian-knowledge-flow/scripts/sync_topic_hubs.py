@@ -8,7 +8,9 @@ import re
 from pathlib import Path
 
 
-DEFAULT_SCAN_FOLDERS = ("00_Inbox", "06_Sources", "01_Notes", "02_Claims", "03_Actions", "04_Outputs", "07_Projects")
+DEFAULT_SCAN_FOLDERS = ("00_Inbox", "06_Sources")
+GENERATED_START = "<!-- AUTO-GENERATED:START -->"
+GENERATED_END = "<!-- AUTO-GENERATED:END -->"
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -36,7 +38,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     action = "would create" if args.dry_run else "created"
     for path in created:
-        print(f"{action}: {path}")
+        print(f"{action}: {display_path(path, vault)}")
     return 0
 
 
@@ -58,15 +60,31 @@ def sync_topic_pages(
             created.append(domain_page)
             if not dry_run:
                 domain_page.parent.mkdir(parents=True, exist_ok=True)
-                domain_page.write_text(render_domain_page(domain, domain_field=domain_field), encoding="utf-8")
+                domain_page.write_text(
+                    upsert_generated_block(
+                        render_domain_page(domain, domain_field=domain_field),
+                        render_generated_links([]),
+                    ),
+                    encoding="utf-8",
+                )
+        elif not dry_run:
+            maybe_update_existing_page(domain_page, render_generated_links([]))
         for subtopic in sorted(subtopics):
             subtopic_page = domain_dir / f"{subtopic}.md"
             if subtopic_page.exists():
+                if not dry_run:
+                    maybe_update_existing_page(subtopic_page, render_generated_links([]))
                 continue
             created.append(subtopic_page)
             if not dry_run:
                 subtopic_page.parent.mkdir(parents=True, exist_ok=True)
-                subtopic_page.write_text(render_subtopic_page(domain, subtopic, domain_field=domain_field, subtopic_field=subtopic_field), encoding="utf-8")
+                subtopic_page.write_text(
+                    upsert_generated_block(
+                        render_subtopic_page(domain, subtopic, domain_field=domain_field, subtopic_field=subtopic_field),
+                        render_generated_links([]),
+                    ),
+                    encoding="utf-8",
+                )
     return created
 
 
@@ -96,6 +114,8 @@ status: active
 ---
 # {domain}
 
+## Generated Links
+
 ## Related Notes
 
 ```dataview
@@ -117,6 +137,8 @@ status: active
 ---
 # {subtopic}
 
+## Generated Links
+
 ## Related Notes
 
 ```dataview
@@ -125,6 +147,40 @@ WHERE contains({domain_field}, "{domain}") AND contains({subtopic_field}, this.f
 SORT file.mtime DESC
 ```
 """
+
+
+def maybe_update_existing_page(path: Path, generated_block: str) -> bool:
+    original = path.read_text(encoding="utf-8")
+    if GENERATED_START not in original or GENERATED_END not in original:
+        print(f"skipped unmarked topic page: {path.name}")
+        return False
+    updated = upsert_generated_block(original, generated_block)
+    if updated != original:
+        path.write_text(updated, encoding="utf-8")
+        return True
+    return False
+
+
+def display_path(path: Path, base: Path) -> str:
+    try:
+        return path.resolve().relative_to(base.resolve()).as_posix()
+    except ValueError:
+        return path.name
+
+
+def upsert_generated_block(text: str, generated_block: str) -> str:
+    block = f"{GENERATED_START}\n{generated_block.rstrip()}\n{GENERATED_END}"
+    if GENERATED_START in text and GENERATED_END in text:
+        start = text.index(GENERATED_START)
+        end = text.index(GENERATED_END, start) + len(GENERATED_END)
+        return text[:start] + block + text[end:]
+    return text.rstrip() + "\n\n" + block + "\n"
+
+
+def render_generated_links(links: list[str]) -> str:
+    if not links:
+        return "- Add curated links or generated backlinks here."
+    return "\n".join(f"- {link}" for link in links)
 
 
 def read_frontmatter_lists(path: Path) -> dict[str, list[str]]:

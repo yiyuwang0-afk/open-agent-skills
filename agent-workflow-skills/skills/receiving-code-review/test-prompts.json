@@ -1,0 +1,12 @@
+[
+  {
+    "id": 1,
+    "prompt": "Reviewer 提了 6 条意见，我先把容易的 4 条改掉，剩下的回头再问。",
+    "expected": "Assistant clarifies unclear feedback first rather than implementing a partial understanding."
+  },
+  {
+    "id": 2,
+    "prompt": "这个 review 看起来不太对，但我也不想反驳，直接改了吧。",
+    "expected": "Assistant verifies the feedback technically and pushes back when needed instead of blindly complying."
+  }
+]

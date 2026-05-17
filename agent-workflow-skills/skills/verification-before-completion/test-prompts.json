@@ -1,0 +1,12 @@
+[
+  {
+    "id": 1,
+    "prompt": "改完了，应该已经没问题了，我先给用户说修好了。",
+    "expected": "Assistant runs fresh verification before making any success claim."
+  },
+  {
+    "id": 2,
+    "prompt": "agent 说测试过了，我就直接提交了吧。",
+    "expected": "Assistant independently verifies instead of trusting prior reports."
+  }
+]
