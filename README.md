@@ -1,19 +1,71 @@
-# Public Agent Skills
+# Open Agent Skills
 
 Reusable, privacy-safe Skills for agentic coding workflows and Obsidian knowledge workflows.
 
-This repository is designed to be shared publicly. It contains no API keys, no personal vault paths, no chat IDs, and no local service configuration.
+This repository is meant to be cloned and used directly. It contains:
 
-## What Is Included
+- general workflow Skills for planning, debugging, TDD, code review, subagents, and verification
+- a generic Obsidian knowledge workflow Skill with optional Feishu/Lark intake
+- a cross-platform installer
+- safe example configuration files
 
-- `agent-workflow-skills/`: general-purpose workflow Skills for planning, debugging, test-driven development, code review, subagent work, and completion verification.
-- `obsidian-knowledge-flow/`: a generic Obsidian workflow Skill for importing material, classifying notes with an OpenAI-compatible API, syncing topic hub pages, and optionally receiving Feishu/Lark forwarded messages.
-- `scripts/install_skills.py`: cross-platform installer that copies selected Skills into a local skills directory.
-- `examples/`: safe templates for local configuration.
+It does **not** contain API keys, personal vault paths, chat IDs, local service files, or private notes.
 
-## Quick Install
+## Repository Layout
 
-Install all Skills into a local directory:
+```text
+.
+├── agent-workflow-skills/
+│   ├── README.md
+│   └── skills/
+│       ├── using-superpowers/
+│       ├── brainstorming/
+│       ├── writing-plans/
+│       ├── systematic-debugging/
+│       ├── test-driven-development/
+│       └── ...
+├── obsidian-knowledge-flow/
+│   ├── SKILL.md
+│   ├── README.md
+│   ├── requirements.txt
+│   └── scripts/
+│       ├── classify_materials.py
+│       ├── feishu_receiver.py
+│       └── sync_topic_hubs.py
+├── examples/
+│   └── env.example
+└── scripts/
+    ├── install_skills.py
+    └── privacy_scan.py
+```
+
+## Requirements
+
+- Git
+- Python 3.10 or newer
+- An agent runtime that supports filesystem Skills, such as Codex, Claude Code, OpenClaw, or a compatible local agent setup
+- Optional for Obsidian classification: an OpenAI-compatible chat-completions API key
+- Optional for Feishu/Lark intake: a Feishu/Lark bot app
+
+The core installer uses only the Python standard library.
+
+## Quick Start
+
+Clone the repository:
+
+```bash
+git clone https://github.com/yiyuwang0-afk/open-agent-skills.git
+cd open-agent-skills
+```
+
+Windows PowerShell:
+
+```powershell
+git clone https://github.com/yiyuwang0-afk/open-agent-skills.git
+cd open-agent-skills
+```
+
+Install all Skills into Codex:
 
 ```bash
 python scripts/install_skills.py --target ~/.codex/skills
@@ -25,6 +77,32 @@ Windows PowerShell:
 py -3 scripts/install_skills.py --target "$env:USERPROFILE\.codex\skills"
 ```
 
+Verify what would be installed before copying:
+
+```bash
+python scripts/install_skills.py --target ~/.codex/skills --dry-run
+```
+
+Expected result: the installer lists the workflow Skills plus `obsidian-knowledge-flow`.
+
+## Install Targets
+
+Use the target directory for your agent runtime:
+
+| Runtime | Typical target |
+| --- | --- |
+| Codex | `~/.codex/skills` |
+| Claude Code | `~/.claude/skills` |
+| OpenClaw | your OpenClaw workspace `skills/` folder |
+| Other local agents | the directory your runtime scans for `SKILL.md` folders |
+
+Windows examples:
+
+```powershell
+py -3 scripts/install_skills.py --target "$env:USERPROFILE\.codex\skills"
+py -3 scripts/install_skills.py --target "$env:USERPROFILE\.claude\skills"
+```
+
 Install only one pack:
 
 ```bash
@@ -32,19 +110,26 @@ python scripts/install_skills.py --pack agent-workflow-skills --target ~/.codex/
 python scripts/install_skills.py --pack obsidian-knowledge-flow --target ~/.codex/skills
 ```
 
-The installer only copies folders containing `SKILL.md`. It does not copy `.env` files, credentials, local logs, databases, or private vault content.
+The installer copies only directories containing `SKILL.md`. It skips `.env`, `.git`, caches, logs, databases, and compiled Python files.
 
 ## Manual Install
 
-Copy any folder that contains a `SKILL.md` file into your agent's skills directory.
+If you do not want to run the installer, copy any Skill folder into your agent's Skills directory.
 
-Common targets:
+For the workflow pack:
 
-- Codex: `~/.codex/skills`
-- Claude Code: `~/.claude/skills`
-- OpenClaw workspace: your configured OpenClaw workspace `skills/` folder
+```bash
+mkdir -p ~/.codex/skills
+cp -R agent-workflow-skills/skills/* ~/.codex/skills/
+```
 
-On Windows, use the same folder structure under your user profile, for example:
+For the Obsidian Skill:
+
+```bash
+cp -R obsidian-knowledge-flow ~/.codex/skills/
+```
+
+Windows PowerShell:
 
 ```powershell
 $target = "$env:USERPROFILE\.codex\skills"
@@ -53,11 +138,95 @@ Copy-Item -Recurse .\agent-workflow-skills\skills\* $target
 Copy-Item -Recurse .\obsidian-knowledge-flow $target
 ```
 
-## Obsidian Knowledge Flow Setup
+## What The Workflow Skills Do
 
-1. Copy `examples/env.example` to `<your-vault>/.env`.
-2. Fill in your own API key and model settings.
-3. Run a dry run before writing to your vault:
+The `agent-workflow-skills` pack is methodology-focused. It helps an agent behave more like a careful engineering collaborator.
+
+Included Skills:
+
+- `using-superpowers`: check for relevant Skills before starting non-trivial work
+- `brainstorming`: turn ambiguous ideas into clear designs
+- `writing-plans`: convert approved designs into implementation plans
+- `adversarial-plan-review`: review plans from advocate and skeptic perspectives
+- `systematic-debugging`: find root cause before changing code
+- `test-driven-development`: write failing tests before behavior changes
+- `subagent-driven-development`: split approved plans across independent agents
+- `dispatching-parallel-agents`: decide when parallel work is appropriate
+- `requesting-code-review`: ask for independent review
+- `receiving-code-review`: apply review feedback rigorously
+- `verification-before-completion`: verify before claiming work is done
+- `using-git-worktrees`: isolate feature work
+- `executing-plans`: execute written plans with checkpoints
+- `finishing-a-development-branch`: finish, merge, or clean up a branch
+- `writing-skills`: create and improve Skills
+
+After installation, start a new agent session and ask a non-trivial task. If your runtime exposes Skill metadata, you should see these Skills available.
+
+## Obsidian Knowledge Flow
+
+`obsidian-knowledge-flow` is a generic Skill and script bundle for:
+
+- saving shared links or explicit material messages into an Obsidian inbox
+- classifying Markdown notes into `topics` and optional `hub_topics`
+- supporting English or Chinese frontmatter fields
+- creating topic hub pages
+- optionally receiving Feishu/Lark messages
+
+Read the package-specific guide:
+
+```text
+obsidian-knowledge-flow/README.md
+```
+
+### Minimal Obsidian Setup
+
+Create or choose an Obsidian vault, then copy the example `.env`:
+
+```bash
+cp examples/env.example /path/to/vault/.env
+```
+
+Windows PowerShell:
+
+```powershell
+Copy-Item .\examples\env.example "C:\Path\To\Vault\.env"
+```
+
+Fill in:
+
+```text
+CLASSIFIER_API_KEY=
+CLASSIFIER_BASE_URL=https://api.openai.com/v1
+CLASSIFIER_MODEL=gpt-4.1-mini
+```
+
+You can use any provider with an OpenAI-compatible `/chat/completions` endpoint.
+
+### First Dry Run
+
+Create a test note:
+
+```bash
+mkdir -p /path/to/vault/00_Inbox
+cat > /path/to/vault/00_Inbox/example.md <<'EOF'
+# Example note
+
+AI tools are changing how small teams plan, debug, and ship software.
+EOF
+```
+
+Windows PowerShell:
+
+```powershell
+New-Item -ItemType Directory -Force "C:\Path\To\Vault\00_Inbox"
+@"
+# Example note
+
+AI tools are changing how small teams plan, debug, and ship software.
+"@ | Set-Content -Encoding UTF8 "C:\Path\To\Vault\00_Inbox\example.md"
+```
+
+Run dry-run classification:
 
 ```bash
 python obsidian-knowledge-flow/scripts/classify_materials.py --vault /path/to/vault --folder 00_Inbox --dry-run
@@ -69,36 +238,133 @@ Windows PowerShell:
 py -3 .\obsidian-knowledge-flow\scripts\classify_materials.py --vault "C:\Path\To\Vault" --folder 00_Inbox --dry-run
 ```
 
-For Feishu/Lark forwarding, install dependencies and run the receiver:
+If the output looks right, classify for real:
+
+```bash
+python obsidian-knowledge-flow/scripts/classify_materials.py --vault /path/to/vault --folder 00_Inbox --limit 5
+```
+
+### Chinese Frontmatter
+
+```bash
+python obsidian-knowledge-flow/scripts/classify_materials.py \
+  --vault /path/to/vault \
+  --folder "06_素材库/待分类" \
+  --language zh \
+  --hub-topics "产品,职业,战略"
+```
+
+### Feishu/Lark Intake
+
+Install optional dependency:
 
 ```bash
 python -m pip install -r obsidian-knowledge-flow/requirements.txt
+```
+
+Add these to your vault-local `.env`:
+
+```text
+FEISHU_APP_ID=
+FEISHU_APP_SECRET=
+```
+
+Test without connecting to Feishu/Lark:
+
+```bash
+python obsidian-knowledge-flow/scripts/feishu_receiver.py --vault /path/to/vault --simulate-text "save: https://example.com/article"
+```
+
+Run the receiver:
+
+```bash
 python obsidian-knowledge-flow/scripts/feishu_receiver.py --vault /path/to/vault
 ```
 
-## Privacy Contract
+The public repo intentionally does not include launchd, systemd, Task Scheduler, or machine-specific service files. Add those locally if you want a receiver to run continuously.
 
-Before publishing changes, check that the repository does not contain:
+## Privacy And Safety
 
-- real vault paths
-- `.env` files
-- API keys or access tokens
-- Feishu/Lark app IDs, app secrets, chat IDs, message IDs, sender IDs, or open IDs
-- private diary content, private work notes, or scraped article bodies
-- local service files such as LaunchAgents, systemd units, or machine-specific OpenClaw config
-
-Run the included lightweight privacy scan:
+This repo is designed for public sharing. Before publishing your own fork, run:
 
 ```bash
 python scripts/privacy_scan.py .
 ```
 
-## Platform Support
+The scan checks for common private paths, API keys, Feishu/Lark IDs, and local OpenClaw/Codex configuration references.
 
-The published scripts are written in plain Python and use `pathlib` for paths. They are intended to run on macOS, Windows, and Linux.
+Do not commit:
 
-Platform-specific service managers are intentionally not included. If you want the Feishu/Lark receiver to run continuously, create your own local launchd, systemd, Task Scheduler, or process-manager setup outside this public repo.
+- real `.env` files
+- API keys, OAuth tokens, or bot secrets
+- Feishu/Lark app IDs, app secrets, chat IDs, message IDs, sender IDs, or open IDs
+- private Obsidian vault paths
+- private diary content, work notes, or scraped article bodies
+- machine-specific service files
 
-## License
+The Obsidian scripts use conservative defaults:
 
-Add a license before publishing to a public package index or GitHub marketplace. If you keep upstream-derived Skills, preserve their original license files and attribution.
+- long plain text is not saved as material unless it has an explicit save/archive prefix
+- Feishu/Lark IDs are not written into notes
+- topic page sync only updates generated marker blocks
+- hub topics are chosen only from a user-provided allowed list
+
+## Updating Your Installed Skills
+
+Pull the latest repository changes:
+
+```bash
+git pull
+```
+
+Re-run the installer:
+
+```bash
+python scripts/install_skills.py --target ~/.codex/skills
+```
+
+The installer replaces existing installed Skill folders with the current repository version.
+
+## Troubleshooting
+
+**`python` is not found**
+
+Use `python3` on macOS/Linux or `py -3` on Windows.
+
+**The agent does not see the Skills**
+
+Check that each installed Skill folder contains a `SKILL.md` directly inside it. Restart the agent session if your runtime loads Skills only at session start.
+
+**Classification says `CLASSIFIER_API_KEY is not set`**
+
+Copy `examples/env.example` to your vault as `.env`, then fill in `CLASSIFIER_API_KEY`. The script reads `<vault>/.env` automatically.
+
+**The classifier API returns an error**
+
+Check that `CLASSIFIER_BASE_URL` points to the provider root ending in `/v1`, and that the selected model supports chat completions and JSON responses.
+
+**Feishu/Lark receiver saves nothing**
+
+Use `--simulate-text` first. Real Feishu/Lark setup also requires app permissions and event subscription configuration in the Feishu/Lark developer console.
+
+## Development Checklist
+
+Before pushing changes:
+
+```bash
+python scripts/privacy_scan.py .
+python scripts/install_skills.py --target /tmp/open-agent-skills-test --dry-run
+python -m py_compile scripts/install_skills.py scripts/privacy_scan.py obsidian-knowledge-flow/scripts/*.py
+```
+
+Windows PowerShell:
+
+```powershell
+py -3 scripts/privacy_scan.py .
+py -3 scripts/install_skills.py --target "$env:TEMP\open-agent-skills-test" --dry-run
+py -3 -m py_compile scripts/install_skills.py scripts/privacy_scan.py obsidian-knowledge-flow/scripts/classify_materials.py obsidian-knowledge-flow/scripts/feishu_receiver.py obsidian-knowledge-flow/scripts/sync_topic_hubs.py
+```
+
+## License And Attribution
+
+Add a license before publishing derivatives to a package index or marketplace. If you keep upstream-derived Skills, preserve their original license files and attribution.
