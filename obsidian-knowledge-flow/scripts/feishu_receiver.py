@@ -17,6 +17,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from wechat_importer import is_wechat_url, save_wechat_article
+
 
 @dataclass(frozen=True)
 class MaterialMessage:
@@ -43,11 +45,7 @@ def main(argv: list[str] | None = None) -> int:
         if not is_material_intent(message):
             print("simulate skipped: non-material message")
             return 0
-        target = save_message(
-            vault,
-            args.inbox,
-            message,
-        )
+        target = save_material(vault, args.inbox, message)
         print(f"saved: {target.name}")
         return 0
 
@@ -72,7 +70,7 @@ def serve(vault: Path, inbox: str) -> int:
         if not is_material_intent(message):
             print(f"skip non-material message: {message.text[:80]}")
             return
-        target = save_message(vault, inbox, message)
+        target = save_material(vault, inbox, message)
         print(f"saved Feishu message: {target.name}")
 
     event_handler = (
@@ -107,6 +105,12 @@ def save_message(vault: Path, inbox: str, message: MaterialMessage) -> Path:
     target = unique_path(folder / f"{timestamp}-{safe_filename(title_from_message(message))}.md")
     target.write_text(render_message(message), encoding="utf-8")
     return target
+
+
+def save_material(vault: Path, inbox: str, message: MaterialMessage) -> Path:
+    if is_wechat_url(message.source_url):
+        return save_wechat_article(vault, inbox, message)
+    return save_message(vault, inbox, message)
 
 
 def is_material_intent(message: MaterialMessage) -> bool:
